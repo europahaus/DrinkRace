@@ -143,34 +143,53 @@ def render_leaderboard():
     nine.text = "9.     " + leaderboard[8][1] + "     " + leaderboard[8][0]
 
 
+def was_valid_run():
+    yes_no = input("Valid run? [Y/N]: ")
+    if yes_no.lower() == "y" or yes_no.lower() == "yes":
+        return True
+    elif yes_no.lower() == "n" or yes_no.lower() == "no":
+        return False
+    else:
+        return was_valid_run()
+
+
 def update_leaderboard(score_sec, score_nano):
     global leaderboard
+    
+    in_highscore = False
     
     for i in range(len(leaderboard)):
         score = leaderboard[i]
         name = score[0]
-        time = score[1]
+        time_unit = score[1]
         
-        sep = time.split(":")
+        sep = time_unit.split(":")
         sec = int(sep[0])
         nano = int(sep[1])
         
         #Check if better than current
-        if (score_sec < sec) or (score_sec == sec and score_nano < nano):
-            yes_no = input("Valid run? [Y/N]: ")
-            if yes_no.lower() == "y" or yes_no.lower == "yes":
+        if (int(score_sec) < sec) or (int(score_sec) == sec and int(score_nano) < nano):
+            if was_valid_run() == True:
                 #Ask for name
                 new_name = input("Enter name: ")
                 #Insert at current position
-                leaderboard.insert(i, (new_name, str(score_sec) + ":" + str(score_nano)))
+                leaderboard.insert(i, (new_name, score_sec + ":" + score_nano))
                 #Delete last item
                 del leaderboard[-1]
                 #Render leaderboard again
                 render_leaderboard()
                 #Store the new data in a file
                 store_leaderboard()
-                
+                #Update information
+                in_highscore = True
+            
             break
+    print("")
+    
+    #Show scores little longer if not in highscore
+    if in_highscore == False:
+        time.sleep(5) #Sleep for 5 seconds
+        
     #Then overwrite text to def
     current.text = "Hold button to start"
 
@@ -181,7 +200,7 @@ def button_state_changed(channel):
     global current
     
     if GPIO.input(TEST_PIN):
-        print("Button was pushed")
+        #print("Button was pushed")
         
         # Countdown initiated from idle mode
         if current_mode == 0:
@@ -194,9 +213,9 @@ def button_state_changed(channel):
             current_mode = 0
             #Check for new highscore
             sep = current.text.split(":")
-            update_leaderboard(int(sep[0]), int(sep[1]))
+            update_leaderboard(sep[0], sep[1])
     else:
-        print("Button was released")
+        #print("Button was released")
         
         # Button was released before countdown was done
         if current_mode == 1:
